@@ -4,7 +4,7 @@ import os
 OPENAI_KEY = os.getenv("OPENAI_KEY")
 
 
-def get_story(move):
+def get_story():
     print("*** get_story")
     prompt = """
     Start a story in the style of "choose your own adventure".

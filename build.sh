@@ -2,17 +2,17 @@
 
 DIR=package
 if [ -d "$DIR" ]; then
+    echo "*** deleting package folder"
     rm -rf "$DIR"
 fi
 
+echo "*** deleting zip file"
 rm -f deployment-package.zip
 
-pip install --target ./package -r requirements.txt
-cd package
-zip -r ../deployment-package.zip .
-cd ..
+echo "*** installing dependencies"
+poetry install --without dev --sync
+cd .venv/lib/python3.11/site-packages
+zip -r ../../../../deployment-package.zip .
+cd ../../../../
+zip -r deployment-package.zip src
 zip deployment-package.zip lambda_function.py
-zip deployment-package.zip handlers.py
-zip deployment-package.zip chatgpt.py
-zip deployment-package.zip facebook.py
-zip deployment-package.zip constants.py
