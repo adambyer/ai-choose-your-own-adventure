@@ -1,0 +1,75 @@
+{
+    "version": "2.0",
+    "routeKey": "$default",
+    "rawPath": "/",
+    "rawQueryString": "",
+    "headers": {
+        "x-hub-signature-256": "---",
+        "content-length": "764",
+        "x-amzn-tls-version": "TLSv1.2",
+        "x-forwarded-proto": "https",
+        "x-forwarded-port": "443",
+        "x-forwarded-for": "2a03:2880:20ff:17::face:b00c",
+        "accept": "*/*",
+        "x-amzn-tls-cipher-suite": "ECDHE-RSA-AES128-GCM-SHA256",
+        "x-amzn-trace-id": "---",
+        "host": "---",
+        "content-type": "application/json",
+        "user-agent": "Webhooks/1.0 (https://fb.me/webhooks)",
+        "x-hub-signature": "---"
+    },
+    "requestContext": {
+        "accountId": "anonymous",
+        "apiId": "---",
+        "domainName": "---",
+        "domainPrefix": "---",
+        "http": {
+            "method": "POST",
+            "path": "/",
+            "protocol": "HTTP/1.1",
+            "sourceIp": "2a03:2880:20ff:17::face:b00c",
+            "userAgent": "Webhooks/1.0 (https://fb.me/webhooks)"
+        },
+        "requestId": "---",
+        "routeKey": "$default",
+        "stage": "$default",
+        "time": "02/May/2023:00:20:01 +0000",
+        "timeEpoch": 1682986801850
+    },
+    "body": {
+        "entry": [
+            {
+                "id": "---",
+                "time": 1682986801,
+                "changes": [
+                    {
+                        "value": {
+                            "from": {
+                                "id": "---",
+                                "name": "AI Choose Your Own Adventure"
+                            },
+                            "post": {
+                                "status_type": "mobile_status_update",
+                                "is_published": true,
+                                "updated_time": "2023-05-02T00:19:55+0000",
+                                "permalink_url": "---",
+                                "promotion_status": "inactive",
+                                "id": "---"
+                            },
+                            "message": "2",
+                            "post_id": "---",
+                            "comment_id": "---",
+                            "created_time": 1682986795,
+                            "item": "comment",
+                            "parent_id": "---",
+                            "verb": "add"
+                        },
+                        "field": "feed"
+                    }
+                ]
+            }
+        ],
+        "object": "page"
+    },
+    "isBase64Encoded": false
+}

@@ -10,11 +10,8 @@ def lambda_handler(event, context):
         return response_for_get
 
     # Otherwise handle POST requests
-    response_for_post = handle_post_request(event)
-    if response_for_post:
-        return response_for_post
+    handle_post_request(event)
 
     return {
         'statusCode': 200,
-        "request": event,
     }

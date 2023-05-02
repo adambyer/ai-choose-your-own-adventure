@@ -36,23 +36,19 @@ def handle_get_request(event):
 
 def handle_post_request(event):
     """Handle incoming POST request from FB to webhook endpoint."""
-    print("*** handle_post")
-    response = {
-        "statusCode": 200,
-    }
-
+    print("*** handle_post_request")
     body = event.get("body")
 
     if not body:
         print("*** handle_post_request: no body")
-        return response
+        return
 
     headers = event.get("headers", {})
     signature = headers.get("x-hub-signature-256")
 
     if not signature:
         print("*** handle_post_request: no signature")
-        return response
+        return
 
     _, signature_hash = signature.split("=")
     key = bytes(FACEBOOK_APP_SECRET, "utf-8")
@@ -62,15 +58,15 @@ def handle_post_request(event):
 
     if expected_hash != signature_hash:
         print("*** handle_post_request: signature does not match")
-        return response
+        return
 
     if "object" not in body or body["object"] != "page":
         print("*** handle_post_request: no/wrong object")
-        return response
+        return
 
     if "entry" not in body:
         print("*** handle_post_request: no entry")
-        return response
+        return
 
     for entry in body["entry"]:
         if "changes" not in entry:
@@ -78,39 +74,31 @@ def handle_post_request(event):
             continue
 
         for change in entry["changes"]:
-            if "value" not in change:
+            value = change.get("value")
+            if not value:
                 print("*** handle_post_request: no value")
                 continue
 
-            value = change["value"]
-
-            if "item" not in value:
+            item = value.get("item")
+            if not item:
                 print("*** handle_post_request: no item")
                 continue
 
-            item = value["item"]
-
-            if "verb" not in value:
-                print("*** handle_post_request: no verb")
-                continue
-
-            if "post_id" not in value:
-                print("*** handle_post_request: no post_id")
-                continue
-
-            post_id = value["post_id"]
-
-            # What action was taken?
-            verb = value["verb"]
-
-            # We only care about creations.
+            verb = value.get("verb")
             if verb != "add":
+                # We only care about creations.
                 print("*** handle_post_request: verb not add")
+                continue
+
+            post_id = value.get("post_id")
+            if not post_id:
+                print("*** handle_post_request: no post_id")
                 continue
 
             message = value.get("message")
 
             if not message:
+                print("*** handle_post_request: no message")
                 continue
 
             # What type of update was this?
@@ -123,9 +111,11 @@ def handle_post_request(event):
                     print("*** handle_post_request: no from")
                     continue
 
-                _handle_comment_added(post_id, from_["id"], message)
+                if value.get("comment_id"):
+                    # Just ignore replies to comments
+                    continue
 
-    return None
+                _handle_comment_added(post_id, from_["id"], message)
 
 
 def _handle_post_added(post_id, message):
@@ -136,7 +126,11 @@ def _handle_post_added(post_id, message):
         return
 
     # Create a comment on the new post.
-    comment = get_story()
+    story = get_story()
+    comment = f"""{story}
+
+    Add a comment (not a reply) with only the number.
+    """
     comment_on_post(post_id, comment)
 
 
@@ -149,6 +143,7 @@ def _handle_comment_added(post_id, from_id, message):
         choice = int(message)
     except ValueError:
         print("*** _handle_comment_added: invalid choice")
+        # TODO: this will also weed out the replies made by the system, but should have a better way.
         return
 
     post = get_post(post_id)
