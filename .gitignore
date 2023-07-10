@@ -5,3 +5,4 @@ venv
 .env
 package
 *.zip
+.vscode

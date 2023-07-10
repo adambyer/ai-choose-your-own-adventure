@@ -2,6 +2,7 @@ from src.handlers import handle_get_request, handle_post_request
 
 
 def lambda_handler(event, context):
+    """Handle incoming requests from FB (webhook events) or AWS EventBridge (scheduled events)."""
     print("*** event", event)
 
     # Handle GET requests

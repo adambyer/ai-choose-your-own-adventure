@@ -5,15 +5,32 @@ import json
 import os
 
 from src.chatgpt import get_story
-from src.facebook import comment_on_post, get_post
+from src.facebook import comment_on_post, get_post, get_comments, create_post
 
 FACEBOOK_WEBHOOK_VERIFICATION_TOKEN = os.getenv("FACEBOOK_WEBHOOK_VERIFICATION_TOKEN")
 FACEBOOK_APP_SECRET = os.getenv("FACEBOOK_APP_SECRET")
+FACEBOOK_PAGE_ID = os.getenv("FACEBOOK_PAGE_ID")
+
+
+def _get_post_content(messages=None):
+    story = get_story(messages)
+    return f"""{story}
+
+    Add a comment with only the number of your choice.
+    """
 
 
 def handle_get_request(event):
-    """Handle incoming GET request from FB to webhook endpoint."""
+    """Handle GET request."""
     print("*** handle_get_request")
+    if event.get("createPost"):
+        # Handle scheduled event to create daily story
+        content = _get_post_content()
+        create_post(content)
+        return {
+            "statusCode": 200,
+        }
+
     # GET handles verification
     if event["requestContext"]["http"]["method"].upper() == "GET":
         params = event.get("queryStringParameters", {})
@@ -35,7 +52,7 @@ def handle_get_request(event):
 
 
 def handle_post_request(event):
-    """Handle incoming POST request from FB to webhook endpoint."""
+    """Handle POST request from FB (webhook events)."""
     print("*** handle_post_request")
     body = event.get("body")
 
@@ -101,37 +118,15 @@ def handle_post_request(event):
                 print("*** handle_post_request: no message")
                 continue
 
-            # What type of update was this?
-            if item == "status":
-                _handle_post_added(post_id, message)
-            elif item == "comment":
+            # We only care about comments.
+            if item == "comment":
                 from_ = value.get("from")
 
                 if not from_:
                     print("*** handle_post_request: no from")
                     continue
 
-                if value.get("comment_id"):
-                    # Just ignore replies to comments
-                    continue
-
                 _handle_comment_added(post_id, from_["id"], message)
-
-
-def _handle_post_added(post_id, message):
-    """Handle new post being added to FB page."""
-    print("*** _handle_post_added:", post_id, message)
-    if not message.lower().startswith("start"):
-        print("*** _handle_post_added: not a 'start' message")
-        return
-
-    # Create a comment on the new post.
-    story = get_story()
-    comment = f"""{story}
-
-    Add a comment (not a reply) with only the number.
-    """
-    comment_on_post(post_id, comment)
 
 
 def _handle_comment_added(post_id, from_id, message):
@@ -139,11 +134,11 @@ def _handle_comment_added(post_id, from_id, message):
     print("*** _handle_comment_added:", post_id, from_id, message)
     message = message.lower()
 
+    # We only care about comments that are a single int (choice).
     try:
-        choice = int(message)
+        _ = int(message)
     except ValueError:
-        print("*** _handle_comment_added: invalid choice")
-        # TODO: this will also weed out the replies made by the system, but should have a better way.
+        print("*** _handle_comment_added: ignoring non-choice comment")
         return
 
     post = get_post(post_id)
@@ -158,11 +153,28 @@ def _handle_comment_added(post_id, from_id, message):
         print("*** _handle_comment_added: no from")
         return
 
-    post_from_id = from_["id"]
+    comments = get_comments(post_id)
 
-    if post_from_id != from_id:
-        # Comment is not from the original poster. Ignore.
-        print("*** _handle_comment_added: comment not from original poster")
-        return
+    # Create ChatGPT messages from comments.
+    # We only care about comments from either the page or the current commentor.
+    # Page comments are assigned the assistant role, commentor comments are assigned the user role.
+    # Also reversing since they come in oldest to newest.
+    messages = [
+        {
+            "role": "user" if c["from"]["id"] == from_id else "assistant",
+            "content": c["message"],
+        }
+        for c in comments
+        if c["from"]["id"] in [from_id, FACEBOOK_PAGE_ID]
+    ].reverse()
 
-    print("*** _handle_comment_added: all good, get next part of story", choice)
+    # Append users choice.
+    messages.append(
+        {
+            "role": "user",
+            "content": message,
+        }
+    )
+
+    comment = _get_post_content(messages)
+    comment_on_post(post_id, comment)
