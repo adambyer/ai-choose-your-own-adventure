@@ -1,6 +1,6 @@
 # AI Choose Your Own Adventure
 
-Don't forget to page to app.
+Don't forget to add page to app.
 
 User perms for FB:
 pages_show_list
