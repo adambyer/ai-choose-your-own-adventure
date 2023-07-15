@@ -1,6 +1,8 @@
 import openai
 import os
 
+from .enums import PromptRole
+
 OPENAI_KEY = os.getenv("OPENAI_KEY")
 
 
@@ -10,7 +12,7 @@ def get_story(messages=None):
     if not messages:
         messages = [
             {
-                "role": "user",
+                "role": PromptRole.USER.value,
                 "content": (
                     'Start a story in the style of "choose your own adventure". '
                     "Prompt me with a numbered list of options for me to choose what happens next."
@@ -19,13 +21,16 @@ def get_story(messages=None):
         ]
 
     # System message always goes first.
-    messages.insert(0, {
-        "role": "system",
-        "content": (
-            'You are an AI trained to write stories in the style of "choose your own adventure". '
-            "You have started a story and prompted the user to make a choice.",
-        )
-    })
+    messages.insert(
+        0,
+        {
+            "role": PromptRole.SYSTEM.value,
+            "content": (
+                'You are an AI trained to write stories in the style of "choose your own adventure". '
+                "You have started a story and prompted the user to make a choice."
+            ),
+        },
+    )
 
     print("*** get_story: messages", messages)
 

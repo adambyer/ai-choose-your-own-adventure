@@ -11,7 +11,7 @@ rm -f deployment-package.zip
 
 echo "*** installing dependencies"
 poetry install --without dev --sync
-cd .venv/lib/python3.11/site-packages
+cd venv/lib/python3.11/site-packages
 zip -r ../../../../deployment-package.zip .
 cd ../../../../
 zip -r deployment-package.zip src
