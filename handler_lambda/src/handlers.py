@@ -15,8 +15,9 @@ def _get_post_content(messages=None):
     story = get_story(messages)
     part = len([m for m in messages if m["role"] == PromptRole.ASSISTANT]) + 1 if messages else 1
 
-    # Just in case AI already added the instructions.
-    story.replace(instructions, "")
+    # AI seems to add these when it sees them in the history. Try to clean it up.
+    story.replace("Add a comment with only the number of your choice.", "")
+    story.replace("Add a reply with only the number of your choice.", "")
 
     return f"""*** PART {part} ***
 

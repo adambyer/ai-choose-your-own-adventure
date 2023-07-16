@@ -1,13 +1,11 @@
 # AI Choose Your Own Adventure
 
-Don't forget to add page to app.
+## Powered by AI, run on AWS Lambda, delivered on a Facebook page.
 
-User perms for FB:
-pages_show_list
-pages_read_engagement
-pages_manage_metadata
-pages_read_user_content
-pages_manage_posts
-pages_manage_engagement
+### Endpoint Lambda:
+- Receives requests from EventBridge (scheduled) to post the beginning of the story.
+- Receives webhook requests from Facebook when users comment on the story post with their choice.
+- Both of these simply offload processing to the Handler Lambda and return.
 
-Make sure lambda timeout is great enough.
+### Handler Lambda:
+- Receives events from the Endpoint Lambda to generate the story content and post it to Facebook.
