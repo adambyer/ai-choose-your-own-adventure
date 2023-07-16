@@ -6,3 +6,4 @@ venv
 package
 *.zip
 .vscode
+examples/
