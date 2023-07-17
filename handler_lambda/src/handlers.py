@@ -11,20 +11,17 @@ FACEBOOK_PAGE_ID = os.getenv("FACEBOOK_PAGE_ID")
 
 
 def _get_post_content(messages=None):
-    instructions = f"Add a {'reply' if messages else 'comment'} with only the number of your choice."
+    instructions = f"*** Add a {'reply' if messages else 'comment'} with the number of your choice. ***"
     story = get_story(messages)
     part = len([m for m in messages if m["role"] == PromptRole.ASSISTANT]) + 1 if messages else 1
 
-    # AI seems to add these when it sees them in the history. Try to clean it up.
-    story.replace("Add a comment with only the number of your choice.", "")
-    story.replace("Add a reply with only the number of your choice.", "")
+    # AI seems to add these when it sees them in the history.
+    if "*** PART" not in story:
+        story = f"*** PART {part} ***\n\n {story}"
+    if "with the number of your choice" not in story:
+        story = f"{story} \n\n {instructions}"
 
-    return f"""*** PART {part} ***
-
-{story}
-
-*** {instructions} ***
-"""
+    return story
 
 
 def handle_request(event):
