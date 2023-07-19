@@ -4,7 +4,7 @@ import os
 import re
 
 from .enums import PromptRole
-from .facebook import create_comment, get_post_or_comment, get_comments, create_post
+from .facebook import create_comment, get_post, get_comment, get_comments, create_post
 from .openai import get_story
 
 FACEBOOK_PAGE_ID = os.getenv("FACEBOOK_PAGE_ID")
@@ -110,10 +110,9 @@ def handle_request(event):
 def _handle_comment_added(post_id, comment_id, parent_id, from_, message):
     """Handle new comment being added to FB page post."""
     message = message.lower()
-    from_id = from_["id"]
 
     # We don't care about our own posts.
-    if from_id == FACEBOOK_PAGE_ID:
+    if from_["id"] == FACEBOOK_PAGE_ID:
         print("*** _handle_comment_added: ignnoring post from page account.", post_id, comment_id, parent_id, from_)
         return
 
@@ -128,7 +127,7 @@ def _handle_comment_added(post_id, comment_id, parent_id, from_, message):
 
     print("*** _handle_comment_added: have choice", post_id, comment_id, parent_id, from_, message, choice)
 
-    post = get_post_or_comment(post_id)
+    post = get_post(post_id)
 
     # If the post no longer exists just ignore.
     if not post:
@@ -150,6 +149,8 @@ def _handle_comment_added(post_id, comment_id, parent_id, from_, message):
     # If this is not the first comment, we'll find it below.
     initial_comment_id = comment_id
 
+    # Note that parent_id is either the initial post, or the top most comment.
+    # So for a reply, parant_id is NOT necessarily the comment being replied to. It's the initial comment.
     if parent_id == post_id:
         # This is a comment on the original post; add the users choice.
         messages.append(
@@ -161,17 +162,18 @@ def _handle_comment_added(post_id, comment_id, parent_id, from_, message):
     else:
         # This is a comment on a comment(COC).
         # First fetch the initial comment on the post
-        initial_comment = get_post_or_comment(parent_id)
+        initial_comment = get_comment(parent_id)
 
         # If the initial comment no longer exists just ignore.
         if not initial_comment:
             print("*** _handle_comment_added: initial comment not found")
             return
 
-        # We only care about COCs if the from id of the COC matches the initial comment.
-        if initial_comment["from"]["id"] != from_id:
-            print("*** _handle_comment_added: comment on comment from different user")
-            return
+        initial_comment_id = initial_comment["id"]
+
+        # Ideally we would only respond to comments made by the user who made the initial comment.
+        # But the Facebook API doesn't provide "from" info for users unless they authorize the app.
+        # Note that the "from" info is included in the event, just not in responses from the API.
 
         messages.append(
             {
@@ -180,24 +182,24 @@ def _handle_comment_added(post_id, comment_id, parent_id, from_, message):
             }
         )
 
-        initial_comment_id = initial_comment["id"]
-
         # Fetch the COC thread of the initial comment.
         comments = get_comments(initial_comment_id)
 
         print("*** _handle_comment_added: comments", comments)
 
         # Create AI messages from comments.
-        # We only care about comments from either the page or the current commentor.
         # Page comments are assigned the assistant role, commentor comments are assigned the user role.
         for c in comments:
-            if c["from"]["id"] in [from_id, FACEBOOK_PAGE_ID]:
-                messages.append(
-                    {
-                        "role": PromptRole.USER.value if c["from"]["id"] == from_id else PromptRole.ASSISTANT.value,
-                        "content": c["message"],
-                    }
-                )
+            messages.append(
+                {
+                    "role": (
+                        PromptRole.ASSISTANT.value
+                        if c.get("from") and c["from"]["id"] == FACEBOOK_PAGE_ID
+                        else PromptRole.USER.value
+                    ),
+                    "content": c["message"],
+                }
+            )
 
     print("*** _handle_comment_added: messages", messages)
 

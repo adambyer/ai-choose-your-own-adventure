@@ -5,8 +5,8 @@ FACEBOOK_ACCESS_TOKEN = os.getenv("FACEBOOK_ACCESS_TOKEN")
 FACEBOOK_PAGE_ID = os.getenv("FACEBOOK_PAGE_ID")
 
 
-def get_post_or_comment(id_):
-    print("*** get_post_or_comment", id_)
+def get_post(id_):
+    print("*** get_post", id_)
     url = f"https://graph.facebook.com/{id_}"
     payload = {
         "access_token": FACEBOOK_ACCESS_TOKEN,
@@ -15,10 +15,27 @@ def get_post_or_comment(id_):
     response = requests.get(url, params=payload)
 
     if response.status_code == 200:
-        print("*** get_post_or_comment: succes", response.status_code)
+        print("*** get_post: succes", response.status_code)
         return response.json()
 
-    print("*** get_post_or_comment: error", response.status_code, response.text)
+    print("*** get_post: error", response.status_code, response.text)
+    return None
+
+
+def get_comment(id_):
+    print("*** get_comment", id_)
+    url = f"https://graph.facebook.com/{id_}"
+    payload = {
+        "access_token": FACEBOOK_ACCESS_TOKEN,
+        "fields": "from,message,parent",
+    }
+    response = requests.get(url, params=payload)
+
+    if response.status_code == 200:
+        print("*** get_comment: succes", response.status_code)
+        return response.json()
+
+    print("*** get_comment: error", response.status_code, response.text)
     return None
 
 
